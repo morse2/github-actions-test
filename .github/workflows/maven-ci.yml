@@ -61,60 +61,21 @@ jobs:
             target/reports/**
             target/site/jacoco/**
 
-  integration-tests:
-    name: Cross-repo TestNG integration tests
+  trigger-integration-tests:
+    name: Trigger remote integration tests
     runs-on: ubuntu-latest
     needs: build
+    # 同样使用变量来控制是否执行
     if: ${{ vars.RUN_IT == 'true' && vars.INTEGRATION_REPO != '' }}
-    permissions:
-      contents: read
-
     steps:
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Trigger workflow in integration test repo
+        uses: benc-uk/workflow-dispatch@v1
         with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-
-      - name: Check integration token presence
-        id: check_token
-        env:
-          INTEGRATION_TOKEN: ${{ secrets.INTEGRATION_TOKEN }}
-        run: |
-          if [ -n "$INTEGRATION_TOKEN" ]; then
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_token=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Checkout integration test repo
-        if: steps.check_token.outputs.has_token == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ vars.INTEGRATION_REPO }}
-          ref: ${{ vars.INTEGRATION_REF || 'main' }}
-          path: it-tests
+          # 目标仓库中要触发的工作流文件名
+          workflow: run-tests.yml
+          # 目标仓库，格式 owner/repo
+          repo: ${{ vars.INTEGRATION_REPO }}
+          # 用于触发的 PAT
           token: ${{ secrets.INTEGRATION_TOKEN }}
-
-      - name: Run TestNG integration tests
-        if: steps.check_token.outputs.has_token == 'true'
-        working-directory: it-tests
-        run: |
-          mvn -B -ntp -DskipTests=false test
-          mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.5.0:report-only || true
-
-      - name: Upload integration test reports
-        if: steps.check_token.outputs.has_token == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: integration-test-reports-${{ github.run_number }}
-          path: |
-            it-tests/target/surefire-reports/**
-            it-tests/target/site/surefire-report/**
-            it-tests/target/site/jacoco/**
-          if-no-files-found: ignore
-
-      - name: Skip integration tests (missing INTEGRATION_TOKEN)
-        if: steps.check_token.outputs.has_token != 'true'
-        run: echo "INTEGRATION_TOKEN secret not set; skipping cross-repo integration tests."
+          # 将当前运行 ID 作为输入参数传给远程工作流
+          inputs: '{ "source_run_id": "${{ github.run_id }}" }'
