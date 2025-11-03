@@ -70,9 +70,6 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout this repo (to install artifact)
-        uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -91,10 +88,6 @@ jobs:
             echo "has_token=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install current project to local Maven repository
-        if: steps.check_token.outputs.has_token == 'true'
-        run: mvn -B -ntp -DskipTests install
-
       - name: Checkout integration test repo
         if: steps.check_token.outputs.has_token == 'true'
         uses: actions/checkout@v4
@@ -108,8 +101,6 @@ jobs:
         if: steps.check_token.outputs.has_token == 'true'
         working-directory: it-tests
         run: |
-          ls -l
-          ls -l it-tests
           mvn -B -ntp -DskipTests=false test
           mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.5.0:report-only || true
 
