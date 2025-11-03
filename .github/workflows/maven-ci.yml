@@ -108,6 +108,8 @@ jobs:
         if: steps.check_token.outputs.has_token == 'true'
         working-directory: it-tests
         run: |
+          ls -l
+          ls -l it-tests
           mvn -B -ntp -DskipTests=false test
           mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.5.0:report-only || true
 
