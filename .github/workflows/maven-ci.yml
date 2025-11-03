@@ -65,7 +65,7 @@ jobs:
     name: Cross-repo TestNG integration tests
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ vars.RUN_IT == 'true' && vars.INTEGRATION_REPO != '' && secrets.INTEGRATION_TOKEN != '' }}
+    if: ${{ vars.RUN_IT == 'true' && vars.INTEGRATION_REPO != '' }}
     permissions:
       contents: read
 
@@ -80,10 +80,23 @@ jobs:
           java-version: '17'
           cache: maven
 
+      - name: Check integration token presence
+        id: check_token
+        env:
+          INTEGRATION_TOKEN: ${{ secrets.INTEGRATION_TOKEN }}
+        run: |
+          if [ -n "$INTEGRATION_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install current project to local Maven repository
+        if: steps.check_token.outputs.has_token == 'true'
         run: mvn -B -ntp -DskipTests install
 
       - name: Checkout integration test repo
+        if: steps.check_token.outputs.has_token == 'true'
         uses: actions/checkout@v4
         with:
           repository: ${{ vars.INTEGRATION_REPO }}
@@ -92,12 +105,14 @@ jobs:
           token: ${{ secrets.INTEGRATION_TOKEN }}
 
       - name: Run TestNG integration tests
+        if: steps.check_token.outputs.has_token == 'true'
         working-directory: it-tests
         run: |
           mvn -B -ntp -DskipTests=false test
           mvn -B -ntp org.apache.maven.plugins:maven-surefire-report-plugin:3.5.0:report-only || true
 
       - name: Upload integration test reports
+        if: steps.check_token.outputs.has_token == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-reports-${{ github.run_number }}
@@ -106,3 +121,7 @@ jobs:
             it-tests/target/site/surefire-report/**
             it-tests/target/site/jacoco/**
           if-no-files-found: ignore
+
+      - name: Skip integration tests (missing INTEGRATION_TOKEN)
+        if: steps.check_token.outputs.has_token != 'true'
+        run: echo "INTEGRATION_TOKEN secret not set; skipping cross-repo integration tests."
