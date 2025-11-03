@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ vars.INTEGRATION_REPO }}
-          ref: ${{ vars.INTEGRATION_REF != '' && vars.INTEGRATION_REF || 'main' }}
+          ref: ${{ vars.INTEGRATION_REF || 'main' }}
           path: it-tests
           token: ${{ secrets.INTEGRATION_TOKEN }}
 
