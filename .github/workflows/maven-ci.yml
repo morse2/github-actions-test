@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build:
     name: Test and Package
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
 
@@ -63,7 +63,7 @@ jobs:
 
   trigger-integration-tests:
     name: Trigger remote integration tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
     # 同样使用变量来控制是否执行
     if: ${{ vars.RUN_IT == 'true' && vars.INTEGRATION_REPO != '' }}
