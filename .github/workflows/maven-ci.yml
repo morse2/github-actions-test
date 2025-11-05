@@ -13,8 +13,8 @@ jobs:
   build:
     name: Test and Package
     runs-on: self-hosted
-#    permissions:
-#      contents: read
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
