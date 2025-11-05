@@ -24,3 +24,6 @@ Download reports from Actions:
 - After a workflow run completes, open the run page → Artifacts:
   - `test-reports-<run_number>`: contains `target/surefire-reports/`, `target/site/surefire-report/`, and `target/site/jacoco/`
   - `cicd-demo-jar-<run_number>`: packaged JAR
+
+
+# Test it.
